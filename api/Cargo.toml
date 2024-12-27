@@ -16,6 +16,6 @@ tower = "0.5.1"
 tower-cookies = "0.10.0"
 tower-http = { version = "0.6.2", features = ["fs"] }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-rbac-service = { path = "../service" }
+service = { path = "../service" }
 entity = { path = "../entity" }
 migration = { path = "../migration" }
