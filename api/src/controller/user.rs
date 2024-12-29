@@ -1,9 +1,15 @@
-use api::tools::{AppState, FlashData, Params};
-use rbac_service::{
-    sea_orm::{Database, DatabaseConnection},
-    Query as QueryCore, User as UserService,
+use crate::tools::{AppState, FlashData, Params};
+use service::{
+    Query as QueryCore, UserServices,
 };
-use sea_orm::entity::prelude::*;
+use axum::{
+    response::Html,
+    extract::{Form, Path, Query, State},
+    http::StatusCode
+};
+use tower_cookies::{ Cookies};
+use crate::flash::{get_flash_cookie, post_response, PostResponse};
+use entity::user;
 
 pub struct UserController;
 
@@ -45,7 +51,9 @@ impl UserController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        UserService::create_user(&state.conn, form);
+        UserServices::create_user(&state.conn, form)
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create user"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -53,18 +61,20 @@ impl UserController {
                 kind: "success".to_string(),
                 message: "Post created successfully".to_string(),
             },
-        ));
+        ))
     }
 
     pub async fn update_user(
         state: State<AppState>,
-        Path(id): Path<i32>,
+        Path(id): Path<i64>,
         mut cookies: Cookies,
         form: Form<user::Model>,
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        UserService::update_user(&state.conn, id, form);
+        UserServices::update_user_by_id(&state.conn, id, form)
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update user"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -72,15 +82,17 @@ impl UserController {
                 kind: "success".to_string(),
                 message: "Post updated successfully".to_string(),
             },
-        ));
+        ))
     }
 
     pub async fn delete_user(
         state: State<AppState>,
-        Path(id): Path<i32>,
+        Path(id): Path<i64>,
         mut cookies: Cookies,
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
-        UserService::delete_user(&state.conn, id);
+        UserServices::delete_user(&state.conn, id)
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete user"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -88,6 +100,6 @@ impl UserController {
                 kind: "success".to_string(),
                 message: "Post deleted successfully".to_string(),
             },
-        ));
+        ))
     }
 }

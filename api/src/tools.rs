@@ -1,18 +1,22 @@
 use serde::{Deserialize, Serialize};
+use tera::Tera;
+use service::{
+    sea_orm::{ DatabaseConnection}
+};
 #[derive(Clone)]
 pub struct AppState {
-    templates: Tera,
-    conn: DatabaseConnection,
+    pub templates: Tera,
+    pub conn: DatabaseConnection,
 }
 
 #[derive(Deserialize)]
 pub struct Params {
-    page: Option<u64>,
-    posts_per_page: Option<u64>,
+    pub page: Option<u64>,
+    pub posts_per_page: Option<u64>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct FlashData {
-    kind: String,
-    message: String,
+    pub kind: String,
+    pub message: String,
 }

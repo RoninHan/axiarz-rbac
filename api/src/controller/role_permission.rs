@@ -1,9 +1,15 @@
-use api::tools::{AppState, FlashData, Params};
-use rbac_service::{
-    sea_orm::{Database, DatabaseConnection},
-    Query as QueryCore, RolePermission as RolePermissionService,
+use crate::tools::{AppState, FlashData, Params};
+use service::{
+    Query as QueryCore, RolePermissionServices,
 };
-use sea_orm::entity::prelude::*;
+use axum::{
+    response::Html,
+    extract::{Form, Query, State},
+    http::StatusCode
+};
+use tower_cookies::{ Cookies};
+use crate::flash::{get_flash_cookie, post_response, PostResponse};
+use entity::role_permission;
 
 pub struct RolePermissionController;
 
@@ -45,7 +51,9 @@ impl RolePermissionController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        RolePermissionService::create_role_permission(&state.conn, form);
+        RolePermissionServices::create_role_permission(&state.conn, form)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create role permission"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -53,26 +61,10 @@ impl RolePermissionController {
                 kind: "success".to_string(),
                 message: "Post created successfully".to_string(),
             },
-        ));
+        ))
     }
 
-    pub async fn update_role_permission(
-        state: State<AppState>,
-        mut cookies: Cookies,
-        form: Form<role_permission::Model>,
-    ) -> Result<PostResponse, (StatusCode, &'static str)> {
-        let form = form.0;
-
-        RolePermissionService::update_role_permission(&state.conn, form);
-
-        Ok(post_response(
-            &mut cookies,
-            FlashData {
-                kind: "success".to_string(),
-                message: "Post updated successfully".to_string(),
-            },
-        ));
-    }
+    
 
     pub async fn delete_role_permission(
         state: State<AppState>,
@@ -81,7 +73,9 @@ impl RolePermissionController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        RolePermissionService::delete_role_permission(&state.conn, form);
+        RolePermissionServices::delete_role_permission_by_id(&state.conn, form.id)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete role permission"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -89,6 +83,6 @@ impl RolePermissionController {
                 kind: "success".to_string(),
                 message: "Post deleted successfully".to_string(),
             },
-        ));
+        ))
     }
 }

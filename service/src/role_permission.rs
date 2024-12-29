@@ -11,16 +11,16 @@ impl RolePermissionServices {
         role_permission::ActiveModel {
             role_id: Set(form_data.role_id),
             permission_id: Set(form_data.permission_id),
-            created_at: Set(chrono::Utc::now()),
-            updated_at: Set(chrono::Utc::now()),
+            created_at: Set(chrono::Utc::now().naive_utc()),
+            updated_at: Set(chrono::Utc::now().naive_utc()),
             ..Default::default()
         }
         .save(db)
         .await
     }
 
-    pub async fn delete_role_permission_by_id(db: &DbConn, id: i32) -> Result<(), DbErr> {
-        RolePermission::delete()
+    pub async fn delete_role_permission_by_id(db: &DbConn, id: i64) -> Result<(), DbErr> {
+        RolePermission::delete_many()
             .filter(role_permission::Column::Id.eq(id))
             .exec(db)
             .await?;

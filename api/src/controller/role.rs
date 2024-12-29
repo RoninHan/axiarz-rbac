@@ -1,9 +1,15 @@
-use api::tools::{AppState, FlashData, Params};
-use rbac_service::{
-    sea_orm::{Database, DatabaseConnection},
-    Query as QueryCore, Role as RoleService,
+use crate::tools::{AppState, FlashData, Params};
+use service::{
+    Query as QueryCore, RoleServices,
 };
-use sea_orm::entity::prelude::*;
+use axum::{
+    response::Html,
+    extract::{Form, Query, State},
+    http::StatusCode
+};
+use tower_cookies::{ Cookies};
+use crate::flash::{get_flash_cookie, post_response, PostResponse};
+use entity::role;
 
 pub struct RoleController;
 
@@ -45,7 +51,9 @@ impl RoleController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        RoleService::create_role(&state.conn, form);
+        RoleServices::create_role(&state.conn, form)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create role"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -53,7 +61,7 @@ impl RoleController {
                 kind: "success".to_string(),
                 message: "Post created successfully".to_string(),
             },
-        ));
+        ))
     }
 
     pub async fn update_role(
@@ -63,7 +71,9 @@ impl RoleController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        RoleService::update_role(&state.conn, form);
+        RoleServices::update_role_by_id(&state.conn, form.id,form)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update role"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -71,7 +81,7 @@ impl RoleController {
                 kind: "success".to_string(),
                 message: "Post updated successfully".to_string(),
             },
-        ));
+        ))
     }
 
     pub async fn delete_role(
@@ -81,7 +91,9 @@ impl RoleController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        RoleService::delete_role(&state.conn, form);
+        RoleServices::delete_role_by_id(&state.conn, form.id)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete role"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -89,6 +101,6 @@ impl RoleController {
                 kind: "success".to_string(),
                 message: "Post deleted successfully".to_string(),
             },
-        ));
+        ))
     }
 }

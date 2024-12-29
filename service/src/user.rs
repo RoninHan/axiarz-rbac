@@ -9,19 +9,19 @@ impl UserServices {
         form_data: user::Model,
     ) -> Result<user::ActiveModel, DbErr> {
         user::ActiveModel {
-            username: Set(form_data.username.to_owned()),
+            name: Set(form_data.name.to_owned()),
             email: Set(form_data.email.to_owned()),
             password: Set(form_data.password.to_owned()),
             id_card: Set(form_data.id_card.to_owned()),
             sex: Set(form_data.sex.to_owned()),
             phone: Set(form_data.phone.to_owned()),
-            status: String::from("active"),
+            status: Set(String::from("active")),
             description: Set(form_data.description.to_owned()),
             job_number: Set(form_data.job_number.to_owned()),
             birthday: Set(form_data.birthday),
             department_id: Set(form_data.department_id),
-            created_at: Set(chrono::Utc::now()),
-            updated_at: Set(chrono::Utc::now()),
+            created_at: Set(chrono::Utc::now().naive_utc()),
+            updated_at: Set(chrono::Utc::now().naive_utc()),
             ..Default::default()
         }
         .save(db)
@@ -30,7 +30,7 @@ impl UserServices {
 
     pub async fn update_user_by_id(
         db: &DbConn,
-        id: i32,
+        id: i64,
         form_data: user::Model,
     ) -> Result<user::Model, DbErr> {
         let user: user::ActiveModel = User::find_by_id(id)
@@ -41,24 +41,24 @@ impl UserServices {
 
         user::ActiveModel {
             id: user.id,
-            username: Set(form_data.username.to_owned()),
+            name: Set(form_data.name.to_owned()),
             email: Set(form_data.email.to_owned()),
             password: Set(form_data.password.to_owned()),
             id_card: Set(form_data.id_card.to_owned()),
             sex: Set(form_data.sex.to_owned()),
             phone: Set(form_data.phone.to_owned()),
-            status: String::from("active"),
             description: Set(form_data.description.to_owned()),
             job_number: Set(form_data.job_number.to_owned()),
             birthday: Set(form_data.birthday),
             department_id: Set(form_data.department_id),
-            updated_at: Set(chrono::Utc::now()),
+            updated_at: Set(chrono::Utc::now().naive_utc()),
+            ..Default::default()
         }
         .update(db)
         .await
     }
 
-    pub async fn delete_user(db: &DbConn, id: i32) -> Result<DeleteResult, DbErr> {
+    pub async fn delete_user(db: &DbConn, id: i64) -> Result<DeleteResult, DbErr> {
         let user: user::ActiveModel = User::find_by_id(id)
             .one(db)
             .await?

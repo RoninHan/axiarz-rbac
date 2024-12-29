@@ -1,9 +1,15 @@
-use api::tools::{AppState, FlashData, Params};
-use rbac_service::{
-    sea_orm::{Database, DatabaseConnection},
-    Permission as PermissionService, Query as QueryCore,
+use crate::tools::{AppState, FlashData, Params};
+use service::{
+    PermissionServices, Query as QueryCore,
 };
-use sea_orm::entity::prelude::*;
+use axum::{
+    response::Html,
+    extract::{Form, Query, State},
+    http::StatusCode
+};
+use tower_cookies::{ Cookies};
+use crate::flash::{get_flash_cookie, post_response, PostResponse};
+use entity::permission;
 
 pub struct PermissionController;
 
@@ -45,7 +51,9 @@ impl PermissionController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        PermissionService::create_permission(&state.conn, form);
+        PermissionServices::create_permission(&state.conn, form)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create permission"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -53,7 +61,7 @@ impl PermissionController {
                 kind: "success".to_string(),
                 message: "Post created successfully".to_string(),
             },
-        ));
+        ))
     }
 
     pub async fn update_permission(
@@ -63,7 +71,9 @@ impl PermissionController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        PermissionService::update_permission(&state.conn, form);
+        PermissionServices::update_permission_by_id(&state.conn, form.id,form)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to update permission"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -71,7 +81,7 @@ impl PermissionController {
                 kind: "success".to_string(),
                 message: "Post updated successfully".to_string(),
             },
-        ));
+        ))
     }
 
     pub async fn delete_permission(
@@ -81,7 +91,9 @@ impl PermissionController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        PermissionService::delete_permission(&state.conn, form);
+        PermissionServices::delete_permission_by_id(&state.conn, form.id)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete permission"))?;
 
         Ok(post_response(
             &mut cookies,
@@ -89,6 +101,6 @@ impl PermissionController {
                 kind: "success".to_string(),
                 message: "Post deleted successfully".to_string(),
             },
-        ));
+        ))
     }
 }

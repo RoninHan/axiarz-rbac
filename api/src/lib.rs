@@ -3,25 +3,22 @@ mod flash;
 mod tools;
 
 use axum::{
-    extract::{Form, Path, Query, State},
     http::StatusCode,
-    response::Html,
     routing::{get, get_service, post},
     Router,
 };
-use entity::post;
-use flash::{get_flash_cookie, post_response, PostResponse};
+use service::{
+    sea_orm::{Database},
+};
 use migration::{Migrator, MigratorTrait};
 
-use serde::{Deserialize, Serialize};
 use std::env;
 use tera::Tera;
-use tower_cookies::{CookieManagerLayer, Cookies};
+use tower_cookies::{CookieManagerLayer};
 use tower_http::services::ServeDir;
 
-use controller::post::PostController::{
-    create_post, delete_post, edit_post, list_posts, new_post, update_post,
-};
+use crate::controller::post::PostController;
+use tools::AppState;
 
 #[tokio::main]
 async fn start() -> anyhow::Result<()> {
@@ -45,10 +42,10 @@ async fn start() -> anyhow::Result<()> {
     let state = AppState { templates, conn };
 
     let app = Router::new()
-        .route("/", get(list_posts).post(create_post))
-        .route("/:id", get(edit_post).post(update_post))
-        .route("/new", get(new_post))
-        .route("/delete/:id", post(delete_post))
+        .route("/", get(PostController::list_posts).post(PostController::create_post))
+        .route("/:id", get(PostController::edit_post).post(PostController::update_post))
+        .route("/new", get(PostController::new_post))
+        .route("/delete/:id", post(PostController::delete_post))
         .nest_service(
             "/static",
             get_service(ServeDir::new(concat!(

@@ -1,9 +1,15 @@
-use api::tools::{AppState, FlashData, Params};
-use rbac_service::{
-    sea_orm::{Database, DatabaseConnection},
-    Query as QueryCore, UserRole as UserRoleService,
+use crate::tools::{AppState, FlashData, Params};
+use service::{
+    Query as QueryCore, UserRoleServices,
 };
-use sea_orm::entity::prelude::*;
+use axum::{
+    response::Html,
+    extract::{Form, Query, State},
+    http::StatusCode
+};
+use tower_cookies::{ Cookies};
+use crate::flash::{get_flash_cookie, post_response, PostResponse};
+use entity::user_role;
 
 pub struct UserRoleController;
 
@@ -45,31 +51,15 @@ impl UserRoleController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        UserRoleService::create_user_role(&state.conn, form);
+        UserRoleServices::create_user_role(&state.conn, form)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to create user role"))?;
 
         Ok(post_response(
             &mut cookies,
             FlashData {
                 kind: "success".to_string(),
-                message: "Post created successfully".to_string(),
-            },
-        ));
-    }
-
-    pub async fn update_user_role(
-        state: State<AppState>,
-        mut cookies: Cookies,
-        form: Form<user_role::Model>,
-    ) -> Result<PostResponse, (StatusCode, &'static str)> {
-        let form = form.0;
-
-        UserRoleService::update_user_role(&state.conn, form);
-
-        Ok(post_response(
-            &mut cookies,
-            FlashData {
-                kind: "success".to_string(),
-                message: "Post updated successfully".to_string(),
+                message: "User role created successfully".to_string(),
             },
         ))
     }
@@ -81,7 +71,9 @@ impl UserRoleController {
     ) -> Result<PostResponse, (StatusCode, &'static str)> {
         let form = form.0;
 
-        UserRoleService::delete_user_role(&state.conn, form);
+        UserRoleServices::delete_user_role_by_id(&state.conn, form.id)
+            .await
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Failed to delete user role"))?;
 
         Ok(post_response(
             &mut cookies,

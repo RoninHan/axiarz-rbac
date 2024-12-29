@@ -8,6 +8,7 @@ pub struct Model {
     #[serde(skip_deserializing)]
     pub id: i64,
     pub name: String,
+    pub password: String,
     pub id_card: String,
     pub sex: String,
     pub birthday: DateTime,
